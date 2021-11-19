@@ -1,0 +1,172 @@
+<?php
+
+if (!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Type extends CI_Controller
+{
+    function __construct()
+    {
+        parent::__construct();
+        is_login();
+        $this->load->model('Type_model');
+        $this->load->library('form_validation');        
+	$this->load->library('datatables');
+    }
+
+    public function index()
+    {
+        $this->template->load('template','type/tbl_type_list');
+    } 
+    
+    public function json() {
+        header('Content-Type: application/json');
+        echo $this->Type_model->json();
+    }
+
+    public function read($id) 
+    {
+        $row = $this->Type_model->get_by_id($id);
+        if ($row) {
+            $data = array(
+		'id_type' => $row->id_type,
+		'type' => $row->type,
+	    );
+            $this->template->load('template','type/tbl_type_read', $data);
+        } else {
+            $this->session->set_flashdata('message', 'Record Not Found');
+            redirect(site_url('type'));
+        }
+    }
+
+    public function create() 
+    {
+        $data = array(
+            'button' => 'Create',
+            'action' => site_url('type/create_action'),
+	    'id_type' => set_value('id_type'),
+	    'type' => set_value('type'),
+	);
+        $this->template->load('template','type/tbl_type_form', $data);
+    }
+    
+    public function create_action() 
+    {
+        $this->_rules();
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->create();
+        } else {
+            $data = array(
+		'type' => $this->input->post('type',TRUE),
+	    );
+
+            $this->Type_model->insert($data);
+            $this->session->set_flashdata('message', 'Create Record Success 2');
+            redirect(site_url('type'));
+        }
+    }
+    
+    public function update($id) 
+    {
+        $row = $this->Type_model->get_by_id($id);
+
+        if ($row) {
+            $data = array(
+                'button' => 'Update',
+                'action' => site_url('type/update_action'),
+		'id_type' => set_value('id_type', $row->id_type),
+		'type' => set_value('type', $row->type),
+	    );
+            $this->template->load('template','type/tbl_type_form', $data);
+        } else {
+            $this->session->set_flashdata('message', 'Record Not Found');
+            redirect(site_url('type'));
+        }
+    }
+    
+    public function update_action() 
+    {
+        $this->_rules();
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->update($this->input->post('id_type', TRUE));
+        } else {
+            $data = array(
+		'type' => $this->input->post('type',TRUE),
+	    );
+
+            $this->Type_model->update($this->input->post('id_type', TRUE), $data);
+            $this->session->set_flashdata('message', 'Update Record Success');
+            redirect(site_url('type'));
+        }
+    }
+    
+    public function delete($id) 
+    {
+        $row = $this->Type_model->get_by_id($id);
+
+        if ($row) {
+            $this->Type_model->delete($id);
+            $this->session->set_flashdata('message', 'Delete Record Success');
+            redirect(site_url('type'));
+        } else {
+            $this->session->set_flashdata('message', 'Record Not Found');
+            redirect(site_url('type'));
+        }
+    }
+
+    public function _rules() 
+    {
+	$this->form_validation->set_rules('type', 'type', 'trim|required');
+
+	$this->form_validation->set_rules('id_type', 'id_type', 'trim');
+	$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
+    }
+
+    public function excel()
+    {
+        $this->load->helper('exportexcel');
+        $namaFile = "tbl_type.xls";
+        $judul = "tbl_type";
+        $tablehead = 0;
+        $tablebody = 1;
+        $nourut = 1;
+        //penulisan header
+        header("Pragma: public");
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0,pre-check=0");
+        header("Content-Type: application/force-download");
+        header("Content-Type: application/octet-stream");
+        header("Content-Type: application/download");
+        header("Content-Disposition: attachment;filename=" . $namaFile . "");
+        header("Content-Transfer-Encoding: binary ");
+
+        xlsBOF();
+
+        $kolomhead = 0;
+        xlsWriteLabel($tablehead, $kolomhead++, "No");
+	xlsWriteLabel($tablehead, $kolomhead++, "Type");
+
+	foreach ($this->Type_model->get_all() as $data) {
+            $kolombody = 0;
+
+            //ubah xlsWriteLabel menjadi xlsWriteNumber untuk kolom numeric
+            xlsWriteNumber($tablebody, $kolombody++, $nourut);
+	    xlsWriteLabel($tablebody, $kolombody++, $data->type);
+
+	    $tablebody++;
+            $nourut++;
+        }
+
+        xlsEOF();
+        exit();
+    }
+
+}
+
+/* End of file Type.php */
+/* Location: ./application/controllers/Type.php */
+/* Please DO NOT modify this information : */
+/* Generated by Harviacode Codeigniter CRUD Generator 2021-11-05 09:55:31 */
+/* http://harviacode.com */
